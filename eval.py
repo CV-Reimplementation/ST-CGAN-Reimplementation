@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument('--dataroot', required=False,
                         default='../Shadoc/train', help='path to train dataset')
     parser.add_argument('--testroot', required=False,
-                        default='../Jung/test', help='path to test dataset')
+                        default='../dataset/Kligler/test', help='path to test dataset')
     parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
     parser.add_argument('--valBatchSize', type=int, default=1, help='val. input batch size')
     parser.add_argument('--originalSize', type=int,

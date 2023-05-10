@@ -21,10 +21,10 @@ from tqdm import tqdm
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataroot', required=False,
-                        default='../Shadoc/train', help='path to train dataset')
+                        default='../dataset/Kligler/train', help='path to train dataset')
     parser.add_argument('--testroot', required=False,
-                        default='../Shadoc/test', help='path to test dataset')
-    parser.add_argument('--batchSize', type=int, default=2, help='input batch size')
+                        default='../dataset/Kligler/test', help='path to test dataset')
+    parser.add_argument('--batchSize', type=int, default=3, help='input batch size')
     parser.add_argument('--valBatchSize', type=int, default=1, help='val. input batch size')
     parser.add_argument('--originalSize', type=int,
                         default=512, help='the height / width of the original input image')
@@ -34,7 +34,7 @@ def parse_args():
     #                     default=3, help='size of the input channels')
     # parser.add_argument('--outputChannelSize', type=int,
     #                     default=3, help='size of the output channels')
-    parser.add_argument('--gpu_ids', type=str, default='0,1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+    parser.add_argument('--gpu_ids', type=str, default='0,1,2', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
     parser.add_argument('--lambda1', type=float, default=5, help='lambda1 for G2')
     parser.add_argument('--lambda2', type=float, default=0.1, help='lambda2 for D1')
     parser.add_argument('--lambda3', type=float, default=0.1, help='lambda3 for D2')
@@ -68,8 +68,8 @@ def parse_args():
         id = int(str_id)
         if id >= 0:
             opt.gpu_ids.append(id)
-    if len(opt.gpu_ids) > 0 and torch.cuda.is_available():
-        torch.cuda.set_device(opt.gpu_ids[0])
+    # if len(opt.gpu_ids) > 0 and torch.cuda.is_available():
+    #     torch.cuda.set_device(opt.gpu_ids[0])
 
     return opt
 
@@ -195,8 +195,8 @@ def main(opt):
     #
     # summary(model, input_size=(4, 256, 256))
 
-    criterionGAN = nn.BCEWithLogitsLoss().to(opt.gpu_ids[0])
-    criterionL1 = nn.L1Loss().to(opt.gpu_ids[0])
+    criterionGAN = nn.BCEWithLogitsLoss()
+    criterionL1 = nn.L1Loss()
 
     # get randomly sampled validation images and save it
     
@@ -230,13 +230,14 @@ def main(opt):
             total_iters += 1
             epoch_iter += 1
 
-            real_A = Variable(data['imgA'].type(Tensor))
-            real_B = Variable(data['imgB'].type(Tensor))
-            real_C = Variable(data['imgC'].type(Tensor))
+            real_A = Variable(data['imgA']).cuda()
+            real_B = Variable(data['imgB']).cuda()
+            real_C = Variable(data['imgC']).cuda()
 
             # compute fake images: G1(A), G2(A, fake_B)
             fake_B = G1(real_A)
             # fake_B = fake_B_pool.query(fake_B)
+            
             fake_C = G2(torch.cat((real_A, fake_B), 1))
             # fake_C = fake_C_pool.query(fake_C)
 
@@ -361,19 +362,15 @@ def main(opt):
         if epoch % opt.save_epoch_freq == 0:  # cache our model every <save_epoch_freq> epochs
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
             if len(opt.gpu_ids) > 0 and torch.cuda.is_available():
-                torch.save(G1.module.cpu().state_dict(), '%s/G1_epoch_%d.pth' % (opt.output_dir, epoch))
-                torch.save(D1.module.cpu().state_dict(), '%s/D1_epoch_%d.pth' % (opt.output_dir, epoch))
-                torch.save(G2.module.cpu().state_dict(), '%s/G2_epoch_%d.pth' % (opt.output_dir, epoch))
-                torch.save(D2.module.cpu().state_dict(), '%s/D2_epoch_%d.pth' % (opt.output_dir, epoch))
-                G1.cuda(opt.gpu_ids[0])
-                G2.cuda(opt.gpu_ids[0])
-                D1.cuda(opt.gpu_ids[0])
-                D2.cuda(opt.gpu_ids[0])
+                torch.save(G1.state_dict(), '%s/G1_epoch_%d.pth' % (opt.output_dir, epoch))
+                torch.save(D1.state_dict(), '%s/D1_epoch_%d.pth' % (opt.output_dir, epoch))
+                torch.save(G2.state_dict(), '%s/G2_epoch_%d.pth' % (opt.output_dir, epoch))
+                torch.save(D2.state_dict(), '%s/D2_epoch_%d.pth' % (opt.output_dir, epoch))
             else:
-                torch.save(G1.cpu().state_dict(), '%s/G1_epoch_%d.pth' % (opt.output_dir, epoch))
-                torch.save(D1.cpu().state_dict(), '%s/D1_epoch_%d.pth' % (opt.output_dir, epoch))
-                torch.save(G2.cpu().state_dict(), '%s/G2_epoch_%d.pth' % (opt.output_dir, epoch))
-                torch.save(D2.cpu().state_dict(), '%s/D2_epoch_%d.pth' % (opt.output_dir, epoch))
+                torch.save(G1.state_dict(), '%s/G1_epoch_%d.pth' % (opt.output_dir, epoch))
+                torch.save(D1.state_dict(), '%s/D1_epoch_%d.pth' % (opt.output_dir, epoch))
+                torch.save(G2.state_dict(), '%s/G2_epoch_%d.pth' % (opt.output_dir, epoch))
+                torch.save(D2.state_dict(), '%s/D2_epoch_%d.pth' % (opt.output_dir, epoch))
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter, time.time() - epoch_start_time))
 
