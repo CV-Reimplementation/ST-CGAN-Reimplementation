@@ -63,8 +63,7 @@ class ISTD(data.Dataset):
         path_B = self.path_ABC[index]['path_B']
         path_C = self.path_ABC[index]['path_C']
         img_A = Image.open(path_A).convert('RGB')
-        # img_B = Image.open(path_B).convert('L')
-        img_B = Image.open(path_B)
+        img_B = Image.open(path_B).convert('L')
         img_C = Image.open(path_C).convert('RGB')
         filename = os.path.basename(path_A)
         if self.transform is not None:
